@@ -9,10 +9,10 @@ import Combine
 import Compound
 import SwiftUI
 
-/// An editor that lets the user draw on an image and decorate it with emojis and text
-/// before it is uploaded.
+/// An editor that lets the user draw on an image and decorate it with emojis and text.
 struct MediaMarkupView: View {
-    let emojiProvider: EmojiProviderProtocol
+    /// The provider used to pick emoji stickers. Emojis are unavailable when this is `nil`.
+    let emojiProvider: EmojiProviderProtocol?
     let markupDidFinish: (UIImage) -> Void
     let markupWasCancelled: () -> Void
     
@@ -22,7 +22,7 @@ struct MediaMarkupView: View {
     @FocusState private var isTextEntryFocussed: Bool
     
     init(image: UIImage,
-         emojiProvider: EmojiProviderProtocol,
+         emojiProvider: EmojiProviderProtocol?,
          markupDidFinish: @escaping (UIImage) -> Void,
          markupWasCancelled: @escaping () -> Void) {
         self.emojiProvider = emojiProvider
@@ -134,8 +134,10 @@ struct MediaMarkupView: View {
                     model.isDrawing.toggle()
                 }
                 
-                toolButton(icon: \.reaction, label: UntranslatedL10n.commonAddEmoji) {
-                    presentEmojiPicker()
+                if emojiProvider != nil {
+                    toolButton(icon: \.reaction, label: UntranslatedL10n.commonAddEmoji) {
+                        presentEmojiPicker()
+                    }
                 }
                 
                 toolButton(icon: \.textFormatting, label: UntranslatedL10n.commonAddText) {
@@ -251,6 +253,8 @@ struct MediaMarkupView: View {
     // MARK: - Emojis
     
     private func presentEmojiPicker() {
+        guard let emojiProvider else { return }
+        
         model.isDrawing = false
         model.selectedStickerID = nil
         
@@ -323,5 +327,8 @@ struct MediaMarkupView_Previews: PreviewProvider {
     static var previews: some View {
         MediaMarkupView(image: image, emojiProvider: EmojiProvider(appSettings: .volatile())) { _ in } markupWasCancelled: { }
             .previewDisplayName("Markup")
+        
+        MediaMarkupView(image: image, emojiProvider: nil) { _ in } markupWasCancelled: { }
+            .previewDisplayName("Without emojis")
     }
 }

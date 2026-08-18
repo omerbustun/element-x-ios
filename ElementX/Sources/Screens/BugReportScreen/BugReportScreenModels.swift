@@ -29,6 +29,7 @@ struct BugReportScreenViewStateBindings {
     var reportText: String
     var sendingLogsEnabled: Bool
     var canContact: Bool
+    var isPresentingScreenshotMarkup = false
 }
 
 enum BugReportScreenViewAction {

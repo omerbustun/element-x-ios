@@ -11,6 +11,7 @@
 "common_add_emoji" = "Add emoji";
 "common_add_text" = "Add text";
 "common_draw" = "Draw";
+"screen_bug_report_replace_screenshot" = "Replace screenshot";
 "screen_home_tab_search" = "Search";
 "screen_media_upload_preview_markup" = "Markup";
 "screen_search_empty_state_message" = "Search for chats and messages";

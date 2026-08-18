@@ -90,6 +90,7 @@ enum A11yIdentifiers {
         let screenshot = "bug_report-screenshot"
         let removeScreenshot = "bug_report-remove_screenshot"
         let attachScreenshot = "bug-report-attach_screenshot"
+        let editScreenshot = "bug_report-edit_screenshot"
         let cancel = "bug_report-cancel"
     }
     

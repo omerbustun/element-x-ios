@@ -20,7 +20,7 @@ struct BugReportScreen: View {
     }
     
     var photosPickerTitle: String {
-        context.viewState.screenshot == nil ? L10n.screenBugReportAttachScreenshot : L10n.screenBugReportEditScreenshot
+        context.viewState.screenshot == nil ? L10n.screenBugReportAttachScreenshot : UntranslatedL10n.screenBugReportReplaceScreenshot
     }
     
     var body: some View {
@@ -45,6 +45,17 @@ struct BugReportScreen: View {
                     return
                 }
                 context.send(viewAction: .attachScreenshot(image))
+            }
+        }
+        .fullScreenCover(isPresented: $context.isPresentingScreenshotMarkup) {
+            if let screenshot = context.viewState.screenshot {
+                // Emojis are intentionally unavailable, the markup here is for annotating and redacting.
+                MediaMarkupView(image: screenshot, emojiProvider: nil) { markedUpScreenshot in
+                    context.send(viewAction: .attachScreenshot(markedUpScreenshot))
+                    context.isPresentingScreenshotMarkup = false
+                } markupWasCancelled: {
+                    context.isPresentingScreenshotMarkup = false
+                }
             }
         }
     }
@@ -107,6 +118,12 @@ struct BugReportScreen: View {
                 }
             })
             .accessibilityIdentifier(A11yIdentifiers.bugReportScreen.attachScreenshot)
+            
+            if context.viewState.screenshot != nil {
+                ListRow(label: .plain(title: L10n.screenBugReportEditScreenshot),
+                        kind: .button { context.isPresentingScreenshotMarkup = true })
+                    .accessibilityIdentifier(A11yIdentifiers.bugReportScreen.editScreenshot)
+            }
         } footer: {
             if let screenshot = context.viewState.screenshot {
                 Image(uiImage: screenshot)
