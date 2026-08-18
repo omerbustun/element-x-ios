@@ -14,9 +14,10 @@ enum MediaUploadPreviewScreenViewModelAction {
 }
 
 struct MediaUploadPreviewScreenViewState: BindableState {
-    let mediaURLs: [URL]
+    var mediaURLs: [URL]
     let title: String?
     let shouldShowCaptionWarning: Bool
+    let emojiProvider: EmojiProviderProtocol
     var shouldDisableInteraction = false
     
     var mediaEditVersion = 0
@@ -31,6 +32,7 @@ struct MediaUploadPreviewScreenBindings: BindableState {
     
     var isPresentingMediaCaptionWarning = false
     var isPresentingMediaEditor = false
+    var isPresentingMediaMarkup = false
     var alertInfo: AlertInfo<MediaUploadPreviewAlertType>?
 }
 

@@ -63,6 +63,16 @@ struct MediaUploadPreviewScreen: View {
                 // Make sure out of bound error alerts are shown even if the sheet is presented
                 .alert(item: $context.alertInfo)
             }
+            .fullScreenCover(isPresented: $context.isPresentingMediaMarkup) {
+                if let image = currentImage {
+                    MediaMarkupView(image: image, emojiProvider: context.viewState.emojiProvider) { markedUpImage in
+                        context.send(viewAction: .editedMedia(image: markedUpImage, index: currentIndex))
+                        context.isPresentingMediaMarkup = false
+                    } markupWasCancelled: {
+                        context.isPresentingMediaMarkup = false
+                    }
+                }
+            }
     }
     
     @ViewBuilder
@@ -171,12 +181,18 @@ struct MediaUploadPreviewScreen: View {
         }
         
         if isCurrentMediaImage {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button { context.isPresentingMediaMarkup = true } label: {
+                    CompoundIcon(\.edit)
+                }
+                .accessibilityLabel(UntranslatedL10n.screenMediaUploadPreviewMarkup)
+                // Fix a bug with the preferredColorScheme on iOS 18 where the button doesn't
+                // follow the dark colour scheme on devices running with dark mode disabled.
+                .tint(.compound.textActionPrimary)
+                
                 Button { context.isPresentingMediaEditor = true } label: {
                     CompoundIcon(\.crop)
                 }
-                // Fix a bug with the preferredColorScheme on iOS 18 where the button doesn't
-                // follow the dark colour scheme on devices running with dark mode disabled.
                 .tint(.compound.textActionPrimary)
             }
         }
@@ -194,6 +210,14 @@ struct MediaUploadPreviewScreen: View {
         }
         
         return type.conforms(to: .image)
+    }
+    
+    private var currentImage: UIImage? {
+        guard context.viewState.mediaURLs.indices.contains(currentIndex) else {
+            return nil
+        }
+        
+        return UIImage(contentsOfFile: context.viewState.mediaURLs[currentIndex].path(percentEncoded: false))
     }
     
     private func handleKeyPress(_ key: UIKeyboardHIDUsage) {
@@ -398,6 +422,7 @@ struct MediaUploadPreviewScreen_Previews: PreviewProvider, TestablePreview {
                                                              title: "App Icon.png",
                                                              shouldShowCaptionWarning: true,
                                                              galleryEnabled: true,
+                                                             emojiProvider: EmojiProvider(appSettings: .volatile()),
                                                              mediaUploadingPreprocessor: MediaUploadingPreprocessor(appSettings: .volatile()),
                                                              timelineController: TimelineControllerMock(.init()),
                                                              clientProxy: ClientProxyMock(.init()),

@@ -10,8 +10,36 @@ import Foundation
 // swiftlint:disable explicit_type_interface function_parameter_count identifier_name line_length
 // swiftlint:disable nesting type_body_length type_name vertical_whitespace_opening_braces
 internal nonisolated enum UntranslatedL10n {
+  /// Black
+  internal static var a11yMarkupColourBlack: String { return UntranslatedL10n.tr("Untranslated", "a11y_markup_colour_black") }
+  /// Blue
+  internal static var a11yMarkupColourBlue: String { return UntranslatedL10n.tr("Untranslated", "a11y_markup_colour_blue") }
+  /// Green
+  internal static var a11yMarkupColourGreen: String { return UntranslatedL10n.tr("Untranslated", "a11y_markup_colour_green") }
+  /// Orange
+  internal static var a11yMarkupColourOrange: String { return UntranslatedL10n.tr("Untranslated", "a11y_markup_colour_orange") }
+  /// Purple
+  internal static var a11yMarkupColourPurple: String { return UntranslatedL10n.tr("Untranslated", "a11y_markup_colour_purple") }
+  /// Red
+  internal static var a11yMarkupColourRed: String { return UntranslatedL10n.tr("Untranslated", "a11y_markup_colour_red") }
+  /// White
+  internal static var a11yMarkupColourWhite: String { return UntranslatedL10n.tr("Untranslated", "a11y_markup_colour_white") }
+  /// Yellow
+  internal static var a11yMarkupColourYellow: String { return UntranslatedL10n.tr("Untranslated", "a11y_markup_colour_yellow") }
+  /// Pen size
+  internal static var a11yMarkupPenSize: String { return UntranslatedL10n.tr("Untranslated", "a11y_markup_pen_size") }
+  /// Undo
+  internal static var actionUndo: String { return UntranslatedL10n.tr("Untranslated", "action_undo") }
+  /// Add emoji
+  internal static var commonAddEmoji: String { return UntranslatedL10n.tr("Untranslated", "common_add_emoji") }
+  /// Add text
+  internal static var commonAddText: String { return UntranslatedL10n.tr("Untranslated", "common_add_text") }
+  /// Draw
+  internal static var commonDraw: String { return UntranslatedL10n.tr("Untranslated", "common_draw") }
   /// Search
   internal static var screenHomeTabSearch: String { return UntranslatedL10n.tr("Untranslated", "screen_home_tab_search") }
+  /// Markup
+  internal static var screenMediaUploadPreviewMarkup: String { return UntranslatedL10n.tr("Untranslated", "screen_media_upload_preview_markup") }
   /// Search for chats and messages
   internal static var screenSearchEmptyStateMessage: String { return UntranslatedL10n.tr("Untranslated", "screen_search_empty_state_message") }
   /// Start searching...

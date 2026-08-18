@@ -9,6 +9,7 @@
 import Combine
 import MatrixRustSDK
 import SwiftUI
+import UniformTypeIdentifiers
 
 typealias MediaUploadPreviewScreenViewModelType = StateStoreViewModelV2<MediaUploadPreviewScreenViewState, MediaUploadPreviewScreenViewAction>
 
@@ -35,6 +36,7 @@ class MediaUploadPreviewScreenViewModel: MediaUploadPreviewScreenViewModelType, 
          title: String?,
          shouldShowCaptionWarning: Bool,
          galleryEnabled: Bool,
+         emojiProvider: EmojiProviderProtocol,
          mediaUploadingPreprocessor: MediaUploadingPreprocessor,
          timelineController: TimelineControllerProtocol,
          clientProxy: ClientProxyProtocol,
@@ -52,6 +54,7 @@ class MediaUploadPreviewScreenViewModel: MediaUploadPreviewScreenViewModelType, 
         super.init(initialViewState: MediaUploadPreviewScreenViewState(mediaURLs: mediaURLs,
                                                                        title: title,
                                                                        shouldShowCaptionWarning: shouldShowCaptionWarning,
+                                                                       emojiProvider: emojiProvider,
                                                                        bindings: .init(caption: caption ?? NSAttributedString())))
     }
     
@@ -103,21 +106,42 @@ class MediaUploadPreviewScreenViewModel: MediaUploadPreviewScreenViewModelType, 
             requestHandle?.cancel()
             actionsSubject.send(.dismiss)
         case .editedMedia(let image, let index):
-            guard mediaURLs.indices.contains(index),
-                  let data = image.jpegData(compressionQuality: 1.0) else {
-                return
+            guard mediaURLs.indices.contains(index) else { return }
+            replaceMedia(at: index, with: image)
+        }
+    }
+    
+    /// Writes an edited image back to disk, ready to be uploaded in place of the original.
+    private func replaceMedia(at index: Int, with image: UIImage) {
+        let url = mediaURLs[index]
+        let type = UTType(filenameExtension: url.pathExtension)
+        let isPNG = type?.conforms(to: .png) ?? false
+        
+        guard let data = isPNG ? image.pngData() : image.jpegData(compressionQuality: 1.0) else {
+            MXLog.error("Failed encoding the edited image.")
+            return
+        }
+        
+        // The mime type of an upload is derived from the file's extension, so rename any
+        // other format (such as HEIC) to match the JPEG data that we've just encoded.
+        let keepsExtension = isPNG || (type?.conforms(to: .jpeg) ?? false)
+        let editedURL = keepsExtension ? url : url.deletingPathExtension().appendingPathExtension("jpg")
+        
+        do {
+            try data.write(to: editedURL, options: .atomic)
+            
+            if editedURL != url {
+                try? FileManager.default.removeItem(at: url)
+                mediaURLs[index] = editedURL
+                state.mediaURLs = mediaURLs
             }
             
-            do {
-                try data.write(to: mediaURLs[index], options: .atomic)
-                
-                state.mediaEditVersion += 1
-                
-                processingTask.cancel()
-                processingTask = Self.processMedia(at: mediaURLs, preprocessor: mediaUploadingPreprocessor, clientProxy: clientProxy)
-            } catch {
-                MXLog.error("Failed writing cropped image with error: \(error)")
-            }
+            state.mediaEditVersion += 1
+            
+            processingTask.cancel()
+            processingTask = Self.processMedia(at: mediaURLs, preprocessor: mediaUploadingPreprocessor, clientProxy: clientProxy)
+        } catch {
+            MXLog.error("Failed writing the edited image with error: \(error)")
         }
     }
     

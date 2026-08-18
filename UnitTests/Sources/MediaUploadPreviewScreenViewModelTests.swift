@@ -9,6 +9,7 @@
 @testable import ElementX
 import Foundation
 import Testing
+import UIKit
 
 @MainActor
 final class MediaUploadPreviewScreenViewModelTests {
@@ -261,7 +262,54 @@ final class MediaUploadPreviewScreenViewModelTests {
         #expect(timelineProxy.sendImageUrlThumbnailURLImageInfoCaptionRequestHandleCallsCount == 1)
     }
     
+    @Test
+    func editingAPNGKeepsItAsAPNG() throws {
+        let originalURL = try makeTemporaryFile(named: "screenshot.png")
+        setUpViewModel(urls: [originalURL], expectedCaption: nil)
+        
+        context.send(viewAction: .editedMedia(image: makeImage(), index: 0))
+        
+        #expect(context.viewState.mediaURLs == [originalURL])
+        
+        let data = try Data(contentsOf: originalURL)
+        #expect(data.prefix(4) == Data([0x89, 0x50, 0x4E, 0x47]), "The image should have been written as a PNG.")
+    }
+    
+    @Test
+    func editingAHEICImageRenamesItToMatchItsNewFormat() throws {
+        let originalURL = try makeTemporaryFile(named: "photo.heic")
+        setUpViewModel(urls: [originalURL], expectedCaption: nil)
+        
+        context.send(viewAction: .editedMedia(image: makeImage(), index: 0))
+        
+        // The upload's mime type comes from the file extension, so it must follow the JPEG encoding.
+        let editedURL = try #require(context.viewState.mediaURLs.first)
+        #expect(editedURL.pathExtension == "jpg")
+        #expect(FileManager.default.fileExists(atPath: editedURL.path(percentEncoded: false)))
+        #expect(!FileManager.default.fileExists(atPath: originalURL.path(percentEncoded: false)))
+        
+        let data = try Data(contentsOf: editedURL)
+        #expect(data.prefix(2) == Data([0xFF, 0xD8]), "The image should have been written as a JPEG.")
+    }
+    
     // MARK: - Helpers
+    
+    private func makeTemporaryFile(named name: String) throws -> URL {
+        let directoryURL = URL.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        
+        let url = directoryURL.appending(path: name)
+        try Data("original".utf8).write(to: url)
+        
+        return url
+    }
+    
+    private func makeImage() -> UIImage {
+        UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image { context in
+            UIColor.red.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 4, height: 4))
+        }
+    }
     
     private var audioURL: URL {
         assertResourceURL(filename: "test_audio.mp3")
@@ -322,6 +370,7 @@ final class MediaUploadPreviewScreenViewModelTests {
                                                       title: "Some File",
                                                       shouldShowCaptionWarning: true,
                                                       galleryEnabled: galleryEnabled,
+                                                      emojiProvider: EmojiProvider(appSettings: appSettings),
                                                       mediaUploadingPreprocessor: MediaUploadingPreprocessor(appSettings: appSettings),
                                                       timelineController: TimelineControllerMock(.init(timelineProxy: timelineProxy)),
                                                       clientProxy: clientProxy,

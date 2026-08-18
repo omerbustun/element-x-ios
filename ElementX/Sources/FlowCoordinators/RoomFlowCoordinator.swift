@@ -1121,6 +1121,7 @@ class RoomFlowCoordinator: FlowCoordinatorProtocol {
                                                                        title: title,
                                                                        shouldShowCaptionWarning: flowParameters.appSettings.shouldShowMediaCaptionWarning,
                                                                        galleryEnabled: flowParameters.appSettings.galleryEnabled,
+                                                                       emojiProvider: flowParameters.emojiProvider,
                                                                        mediaUploadingPreprocessor: MediaUploadingPreprocessor(appSettings: flowParameters.appSettings),
                                                                        timelineController: timelineController,
                                                                        clientProxy: userSession.clientProxy,
