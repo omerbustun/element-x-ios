@@ -70,14 +70,18 @@ struct MediaMarkupView: View {
                                       drawingDidChange: model.drawingDidChange)
                     .allowsHitTesting(model.isDrawing)
                 
-                ForEach(model.stickers) { sticker in
-                    MediaMarkupStickerView(sticker: sticker,
-                                           containerSize: canvasSize,
-                                           isSelected: model.selectedStickerID == sticker.id,
-                                           gestureDidBegin: model.recordUndoSnapshot,
-                                           stickerDidChange: model.updateSticker,
-                                           selectSticker: { model.selectedStickerID = sticker.id },
-                                           deleteSticker: { model.deleteSticker(id: sticker.id) })
+                if canvasSize.width > 0 {
+                    ForEach(model.stickers) { sticker in
+                        MediaMarkupStickerView(sticker: sticker,
+                                               containerSize: canvasSize,
+                                               isSelected: model.selectedStickerID == sticker.id,
+                                               gestureDidBegin: model.recordUndoSnapshot,
+                                               stickerDidChange: model.updateSticker,
+                                               selectSticker: { model.selectedStickerID = sticker.id },
+                                               deleteSticker: { model.deleteSticker(id: sticker.id) })
+                    }
+                    // Let the pen draw over the top of a sticker rather than dragging it around.
+                    .allowsHitTesting(!model.isDrawing)
                 }
             }
             .frame(width: canvasSize.width, height: canvasSize.height)
@@ -226,13 +230,13 @@ struct MediaMarkupView: View {
             }
             .padding(.vertical, 24)
         }
+        .task { isTextEntryFocussed = true }
     }
     
     private func presentTextEntry() {
         model.isDrawing = false
         model.selectedStickerID = nil
         textEntry = TextEntry(colour: model.strokeColour)
-        isTextEntryFocussed = true
     }
     
     private func commitTextEntry() {
