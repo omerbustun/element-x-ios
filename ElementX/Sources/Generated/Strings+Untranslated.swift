@@ -36,6 +36,20 @@ internal nonisolated enum UntranslatedL10n {
   internal static var commonAddText: String { return UntranslatedL10n.tr("Untranslated", "common_add_text") }
   /// Draw
   internal static var commonDraw: String { return UntranslatedL10n.tr("Untranslated", "common_draw") }
+  /// Erase
+  internal static var commonErase: String { return UntranslatedL10n.tr("Untranslated", "common_erase") }
+  /// Highlight
+  internal static var commonHighlight: String { return UntranslatedL10n.tr("Untranslated", "common_highlight") }
+  /// Shape
+  internal static var commonShape: String { return UntranslatedL10n.tr("Untranslated", "common_shape") }
+  /// Arrow
+  internal static var commonShapeArrow: String { return UntranslatedL10n.tr("Untranslated", "common_shape_arrow") }
+  /// Ellipse
+  internal static var commonShapeEllipse: String { return UntranslatedL10n.tr("Untranslated", "common_shape_ellipse") }
+  /// Line
+  internal static var commonShapeLine: String { return UntranslatedL10n.tr("Untranslated", "common_shape_line") }
+  /// Rectangle
+  internal static var commonShapeRectangle: String { return UntranslatedL10n.tr("Untranslated", "common_shape_rectangle") }
   /// Replace screenshot
   internal static var screenBugReportReplaceScreenshot: String { return UntranslatedL10n.tr("Untranslated", "screen_bug_report_replace_screenshot") }
   /// Search

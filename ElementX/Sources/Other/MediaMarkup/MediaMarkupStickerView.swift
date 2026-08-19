@@ -13,7 +13,6 @@ struct MediaMarkupStickerView: View {
     let sticker: MediaMarkupSticker
     let containerSize: CGSize
     let isSelected: Bool
-    let gestureDidBegin: () -> Void
     let stickerDidChange: (MediaMarkupSticker) -> Void
     let selectSticker: () -> Void
     let deleteSticker: () -> Void
@@ -119,11 +118,8 @@ struct MediaMarkupStickerView: View {
             .onEnded { _ in baseRotation = nil }
     }
     
-    /// Records a single undo snapshot for however many gestures are used at once.
     private func beginGesture() {
         guard baseCentre == nil, baseScale == nil, baseRotation == nil else { return }
-        
         selectSticker()
-        gestureDidBegin()
     }
 }

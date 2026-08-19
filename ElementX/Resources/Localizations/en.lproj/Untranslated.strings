@@ -11,6 +11,13 @@
 "common_add_emoji" = "Add emoji";
 "common_add_text" = "Add text";
 "common_draw" = "Draw";
+"common_erase" = "Erase";
+"common_highlight" = "Highlight";
+"common_shape" = "Shape";
+"common_shape_arrow" = "Arrow";
+"common_shape_ellipse" = "Ellipse";
+"common_shape_line" = "Line";
+"common_shape_rectangle" = "Rectangle";
 "screen_bug_report_replace_screenshot" = "Replace screenshot";
 "screen_home_tab_search" = "Search";
 "screen_media_upload_preview_markup" = "Markup";

@@ -12,13 +12,20 @@ import SwiftUI
 /// placed on top of the image and whether the pen is currently active.
 @Observable
 final class MediaMarkupModel {
-    private struct Snapshot {
-        let drawing: PKDrawing
-        let stickers: [MediaMarkupSticker]
+    enum Tool: CaseIterable {
+        /// Placing and moving stickers, rather than drawing.
+        case stickers
+        case pen
+        case highlighter
+        case eraser
+        case shape
     }
     
     /// The smallest and largest stroke widths offered by the pen slider, in canvas points.
     static let strokeWidthRange: ClosedRange<CGFloat> = 2...30
+    
+    /// The width of a shape, as a fraction of the smallest side of the image.
+    static let shapeRelativeWidthRange: ClosedRange<CGFloat> = 0.004...0.06
     
     let image: UIImage
     
@@ -29,63 +36,80 @@ final class MediaMarkupModel {
     private(set) var stickers: [MediaMarkupSticker] = []
     var selectedStickerID: MediaMarkupSticker.ID?
     
-    var isDrawing = false
+    private(set) var shapes: [MediaMarkupShape] = []
+    var shapeKind: MediaMarkupShapeKind = .arrow
+    
+    var tool: Tool = .stickers
     var strokeColour: MediaMarkupColour = .white
     var strokeWidth: CGFloat = 8
     
     /// The size of the image as it is currently laid out on screen.
     private(set) var canvasSize: CGSize = .zero
     
-    private var undoStack: [Snapshot] = []
+    /// Only the drawing is undoable. Stickers are removed by selecting them instead.
+    private var undoStack: [PKDrawing] = []
     
     init(image: UIImage) {
         self.image = image
     }
     
-    var canUndo: Bool { !undoStack.isEmpty }
+    /// Undo works on whatever the selected tool draws. Stickers aren't undoable, they're
+    /// removed by selecting them instead.
+    var canUndo: Bool { tool == .shape ? !shapes.isEmpty : !undoStack.isEmpty }
     
-    var hasChanges: Bool { !drawing.strokes.isEmpty || !stickers.isEmpty }
+    var hasChanges: Bool { !drawing.strokes.isEmpty || !stickers.isEmpty || !shapes.isEmpty }
     
-    var inkingTool: PKInkingTool { PKInkingTool(.pen, color: strokeColour.uiColor, width: strokeWidth) }
+    var isDrawing: Bool { tool != .stickers }
+    
+    /// Whether PencilKit should take the drags, rather than the shape layer.
+    var isUsingPencilKit: Bool { tool == .pen || tool == .highlighter || tool == .eraser }
+    
+    var pencilKitTool: PKTool {
+        switch tool {
+        case .stickers, .pen: PKInkingTool(.pen, color: strokeColour.uiColor, width: strokeWidth)
+        case .highlighter: PKInkingTool(.marker, color: strokeColour.uiColor, width: strokeWidth * 2)
+        // Vector erasing removes whole strokes, which matches how undo works and avoids
+        // leaving invisible fragments behind in the exported image.
+        case .eraser: PKEraserTool(.vector)
+        }
+    }
     
     // MARK: - Editing
     
-    /// Records the current state so that it can be restored by ``undo()``.
-    func recordUndoSnapshot() {
-        undoStack.append(Snapshot(drawing: drawing, stickers: stickers))
-    }
-    
+    /// Removes the last thing the selected tool drew.
     func undo() {
-        guard let snapshot = undoStack.popLast() else { return }
-        
-        stickers = snapshot.stickers
-        selectedStickerID = nil
-        replaceDrawing(snapshot.drawing)
+        if tool == .shape {
+            guard !shapes.isEmpty else { return }
+            shapes.removeLast()
+        } else {
+            guard let previousDrawing = undoStack.popLast() else { return }
+            replaceDrawing(previousDrawing)
+        }
     }
     
     /// Stores a drawing that the canvas has just produced, without asking it to reload.
     func drawingDidChange(_ drawing: PKDrawing) {
-        recordUndoSnapshot()
+        undoStack.append(self.drawing)
         self.drawing = drawing
     }
     
     func addSticker(_ sticker: MediaMarkupSticker) {
-        recordUndoSnapshot()
         stickers.append(sticker)
         selectedStickerID = sticker.id
     }
     
-    /// Updates a sticker whilst it is being manipulated. This doesn't record an undo snapshot,
-    /// the gesture handler does that once, when the gesture begins.
     func updateSticker(_ sticker: MediaMarkupSticker) {
         guard let index = stickers.firstIndex(where: { $0.id == sticker.id }) else { return }
         stickers[index] = sticker
     }
     
+    func addShape(_ shape: MediaMarkupShape) {
+        shapes.append(shape)
+    }
+    
     func deleteSticker(id: MediaMarkupSticker.ID) {
         guard stickers.contains(where: { $0.id == id }) else { return }
         
-        recordUndoSnapshot()
         stickers.removeAll { $0.id == id }
         
         if selectedStickerID == id {
@@ -107,7 +131,11 @@ final class MediaMarkupModel {
     
     /// Draws the strokes and stickers into the image at its original resolution.
     func render() -> UIImage? {
-        MediaMarkupRenderer.render(image: image, drawing: drawing, canvasSize: canvasSize, stickers: stickers)
+        MediaMarkupRenderer.render(image: image,
+                                   drawing: drawing,
+                                   canvasSize: canvasSize,
+                                   shapes: shapes,
+                                   stickers: stickers)
     }
     
     // MARK: - Private

@@ -13,7 +13,11 @@ import UIKit
 enum MediaMarkupRenderer {
     /// Draws `drawing` and `stickers` on top of `image` at the image's original resolution.
     /// - Parameter canvasSize: The size that the image (and therefore the drawing) was laid out at on screen.
-    static func render(image: UIImage, drawing: PKDrawing, canvasSize: CGSize, stickers: [MediaMarkupSticker]) -> UIImage? {
+    static func render(image: UIImage,
+                       drawing: PKDrawing,
+                       canvasSize: CGSize,
+                       shapes: [MediaMarkupShape],
+                       stickers: [MediaMarkupSticker]) -> UIImage? {
         let outputSize = CGSize(width: image.size.width * image.scale, height: image.size.height * image.scale)
         
         guard outputSize.width > 0, outputSize.height > 0 else { return nil }
@@ -31,6 +35,10 @@ enum MediaMarkupRenderer {
                     .draw(in: CGRect(origin: .zero, size: outputSize))
             }
             
+            for shape in shapes {
+                draw(shape, in: context.cgContext, outputSize: outputSize)
+            }
+            
             for sticker in stickers {
                 draw(sticker, in: context.cgContext, outputSize: outputSize)
             }
@@ -38,6 +46,25 @@ enum MediaMarkupRenderer {
     }
     
     // MARK: - Private
+    
+    private static func draw(_ shape: MediaMarkupShape, in context: CGContext, outputSize: CGSize) {
+        context.saveGState()
+        context.setStrokeColor(shape.colour.uiColor.cgColor)
+        context.setLineWidth(shape.strokeWidth(in: outputSize))
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
+        
+        for polyline in shape.polylines(in: outputSize) where polyline.count > 1 {
+            context.addLines(between: polyline)
+            context.strokePath()
+        }
+        
+        if let ovalBounds = shape.ovalBounds(in: outputSize) {
+            context.strokeEllipse(in: ovalBounds)
+        }
+        
+        context.restoreGState()
+    }
     
     private static func draw(_ sticker: MediaMarkupSticker, in context: CGContext, outputSize: CGSize) {
         let fontSize = sticker.fontSize(in: outputSize.width)

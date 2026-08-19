@@ -19,6 +19,7 @@ struct MediaMarkupView: View {
     @State private var model: MediaMarkupModel
     @State private var emojiPicker: EmojiPickerPresentation?
     @State private var textEntry: TextEntry?
+    @State private var shapeInProgress: MediaMarkupShape?
     @FocusState private var isTextEntryFocussed: Bool
     
     init(image: UIImage,
@@ -65,17 +66,19 @@ struct MediaMarkupView: View {
                 
                 MediaMarkupCanvasView(drawing: model.drawing,
                                       revision: model.drawingRevision,
-                                      tool: model.inkingTool,
-                                      isDrawingEnabled: model.isDrawing,
+                                      tool: model.pencilKitTool,
+                                      isDrawingEnabled: model.isUsingPencilKit,
                                       drawingDidChange: model.drawingDidChange)
-                    .allowsHitTesting(model.isDrawing)
+                    .allowsHitTesting(model.isUsingPencilKit)
+                
+                MediaMarkupShapeLayer(shapes: model.shapes, shapeInProgress: shapeInProgress)
+                    .allowsHitTesting(false)
                 
                 if canvasSize.width > 0 {
                     ForEach(model.stickers) { sticker in
                         MediaMarkupStickerView(sticker: sticker,
                                                containerSize: canvasSize,
                                                isSelected: model.selectedStickerID == sticker.id,
-                                               gestureDidBegin: model.recordUndoSnapshot,
                                                stickerDidChange: model.updateSticker,
                                                selectSticker: { model.selectedStickerID = sticker.id },
                                                deleteSticker: { model.deleteSticker(id: sticker.id) })
@@ -85,6 +88,8 @@ struct MediaMarkupView: View {
                 }
             }
             .frame(width: canvasSize.width, height: canvasSize.height)
+            .contentShape(.rect)
+            .gesture(shapeGesture(in: canvasSize), including: model.tool == .shape ? .all : .none)
             .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
             .onChange(of: canvasSize, initial: true) { model.updateCanvasSize(canvasSize) }
         }
@@ -128,14 +133,29 @@ struct MediaMarkupView: View {
     
     private var controls: some View {
         VStack(spacing: 16) {
-            if model.isDrawing {
+            if model.tool == .pen || model.tool == .highlighter {
                 penOptions
             }
             
-            HStack(spacing: 24) {
-                toolButton(icon: \.edit, label: UntranslatedL10n.commonDraw, isSelected: model.isDrawing) {
-                    model.selectedStickerID = nil
-                    model.isDrawing.toggle()
+            if model.tool == .shape {
+                shapeOptions
+            }
+            
+            HStack(spacing: 16) {
+                toolButton(icon: \.edit, label: UntranslatedL10n.commonDraw, isSelected: model.tool == .pen) {
+                    select(tool: .pen)
+                }
+                
+                toolButton(icon: \.editSolid, label: UntranslatedL10n.commonHighlight, isSelected: model.tool == .highlighter) {
+                    select(tool: .highlighter)
+                }
+                
+                toolButton(icon: \.delete, label: UntranslatedL10n.commonErase, isSelected: model.tool == .eraser) {
+                    select(tool: .eraser)
+                }
+                
+                toolButton(icon: \.arrowUpRight, label: UntranslatedL10n.commonShape, isSelected: model.tool == .shape) {
+                    select(tool: .shape)
                 }
                 
                 if emojiProvider != nil {
@@ -167,6 +187,60 @@ struct MediaMarkupView: View {
             
             colourPalette(selection: $model.strokeColour)
         }
+    }
+    
+    private var shapeOptions: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                ForEach(MediaMarkupShapeKind.allCases, id: \.self) { kind in
+                    toolButton(icon: kind.icon, label: kind.accessibilityLabel, isSelected: model.shapeKind == kind) {
+                        model.shapeKind = kind
+                    }
+                }
+            }
+            
+            colourPalette(selection: $model.strokeColour)
+        }
+    }
+    
+    /// Drags out a shape between the point the gesture started at and where it is now.
+    private func shapeGesture(in canvasSize: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 2)
+            .onChanged { value in
+                guard canvasSize.width > 0, canvasSize.height > 0 else { return }
+                
+                let start = normalisedPoint(value.startLocation, in: canvasSize)
+                let end = normalisedPoint(value.location, in: canvasSize)
+                
+                if var shapeInProgress {
+                    shapeInProgress.end = end
+                    self.shapeInProgress = shapeInProgress
+                } else {
+                    shapeInProgress = MediaMarkupShape(kind: model.shapeKind,
+                                                       start: start,
+                                                       end: end,
+                                                       colour: model.strokeColour,
+                                                       relativeWidth: relativeShapeWidth)
+                }
+            }
+            .onEnded { _ in
+                if let shapeInProgress, shapeInProgress.start != shapeInProgress.end {
+                    model.addShape(shapeInProgress)
+                }
+                shapeInProgress = nil
+            }
+    }
+    
+    /// The pen's width is in canvas points, whilst a shape's is relative to the image.
+    private var relativeShapeWidth: CGFloat {
+        let smallestSide = min(model.canvasSize.width, model.canvasSize.height)
+        guard smallestSide > 0 else { return MediaMarkupModel.shapeRelativeWidthRange.lowerBound }
+        return (model.strokeWidth / smallestSide).clamped(to: MediaMarkupModel.shapeRelativeWidthRange)
+    }
+    
+    private func normalisedPoint(_ point: CGPoint, in size: CGSize) -> CGPoint {
+        CGPoint(x: (point.x / size.width).clamped(to: 0...1),
+                y: (point.y / size.height).clamped(to: 0...1))
     }
     
     private func toolButton(icon: KeyPath<CompoundIcons, Image>,
@@ -233,8 +307,14 @@ struct MediaMarkupView: View {
         .task { isTextEntryFocussed = true }
     }
     
+    /// Selecting a drawing tool a second time returns to moving stickers around.
+    private func select(tool: MediaMarkupModel.Tool) {
+        model.selectedStickerID = nil
+        model.tool = model.tool == tool ? .stickers : tool
+    }
+    
     private func presentTextEntry() {
-        model.isDrawing = false
+        model.tool = .stickers
         model.selectedStickerID = nil
         textEntry = TextEntry(colour: model.strokeColour)
     }
@@ -259,7 +339,7 @@ struct MediaMarkupView: View {
     private func presentEmojiPicker() {
         guard let emojiProvider else { return }
         
-        model.isDrawing = false
+        model.tool = .stickers
         model.selectedStickerID = nil
         
         let (stream, continuation) = AsyncStream<String>.makeStream()
