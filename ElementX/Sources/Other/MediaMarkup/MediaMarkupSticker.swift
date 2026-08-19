@@ -51,7 +51,9 @@ struct MediaMarkupSticker: Identifiable, Equatable {
 enum MediaMarkupColour: String, CaseIterable, Identifiable {
     case white, black, red, orange, yellow, green, blue, purple
     
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
     
     var uiColor: UIColor {
         switch self {
@@ -66,7 +68,9 @@ enum MediaMarkupColour: String, CaseIterable, Identifiable {
         }
     }
     
-    var color: Color { Color(uiColor: uiColor) }
+    var color: Color {
+        Color(uiColor: uiColor)
+    }
     
     var accessibilityLabel: String {
         switch self {

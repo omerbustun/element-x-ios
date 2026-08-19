@@ -23,7 +23,9 @@ struct MediaMarkupStickerView: View {
     
     private static let scaleRange: ClosedRange<CGFloat> = 0.2...8
     
-    private var fontSize: CGFloat { sticker.fontSize(in: containerSize.width) }
+    private var fontSize: CGFloat {
+        sticker.fontSize(in: containerSize.width)
+    }
     
     var body: some View {
         Text(sticker.string)

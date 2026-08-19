@@ -15,7 +15,9 @@ enum MediaMarkupEntryPoint: Identifiable {
     case text
     case draw
     
-    var id: Self { self }
+    var id: Self {
+        self
+    }
     
     var tool: MediaMarkupModel.Tool {
         switch self {
@@ -72,14 +74,22 @@ final class MediaMarkupModel {
     
     /// Undo works on whatever the selected tool draws. Stickers aren't undoable, they're
     /// removed by selecting them instead.
-    var canUndo: Bool { tool == .shape ? !shapes.isEmpty : !undoStack.isEmpty }
+    var canUndo: Bool {
+        tool == .shape ? !shapes.isEmpty : !undoStack.isEmpty
+    }
     
-    var hasChanges: Bool { !drawing.strokes.isEmpty || !stickers.isEmpty || !shapes.isEmpty }
+    var hasChanges: Bool {
+        !drawing.strokes.isEmpty || !stickers.isEmpty || !shapes.isEmpty
+    }
     
-    var isDrawing: Bool { tool != .stickers }
+    var isDrawing: Bool {
+        tool != .stickers
+    }
     
     /// Whether PencilKit should take the drags, rather than the shape layer.
-    var isUsingPencilKit: Bool { tool == .pen || tool == .highlighter || tool == .eraser }
+    var isUsingPencilKit: Bool {
+        tool == .pen || tool == .highlighter || tool == .eraser
+    }
     
     var pencilKitTool: PKTool {
         switch tool {
