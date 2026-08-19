@@ -8,6 +8,23 @@
 import PencilKit
 import SwiftUI
 
+/// The way the editor was opened from the media upload preview, which decides both the tool it
+/// starts on and, for a sticker, the picker it opens with.
+enum MediaMarkupEntryPoint: Identifiable {
+    case emoji
+    case text
+    case draw
+    
+    var id: Self { self }
+    
+    var tool: MediaMarkupModel.Tool {
+        switch self {
+        case .emoji, .text: .stickers
+        case .draw: .pen
+        }
+    }
+}
+
 /// The state of the image markup editor: the strokes drawn by the user, the stickers they've
 /// placed on top of the image and whether the pen is currently active.
 @Observable
@@ -66,7 +83,8 @@ final class MediaMarkupModel {
     
     var pencilKitTool: PKTool {
         switch tool {
-        case .stickers, .pen: PKInkingTool(.pen, color: strokeColour.uiColor, width: strokeWidth)
+        // Shapes are drawn by their own layer, so PencilKit is left holding the pen.
+        case .stickers, .shape, .pen: PKInkingTool(.pen, color: strokeColour.uiColor, width: strokeWidth)
         case .highlighter: PKInkingTool(.marker, color: strokeColour.uiColor, width: strokeWidth * 2)
         // Vector erasing removes whole strokes, which matches how undo works and avoids
         // leaving invisible fragments behind in the exported image.

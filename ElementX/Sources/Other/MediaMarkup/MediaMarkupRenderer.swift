@@ -73,7 +73,7 @@ enum MediaMarkupRenderer {
         
         let string = NSAttributedString(string: sticker.string, attributes: attributes(for: sticker, fontSize: fontSize))
         // Matches the `fixedSize` used on screen so that long text isn't wrapped differently here.
-        let bounds = string.boundingRect(with: CGSize(width: .greatestFiniteMagnitude, height: .greatestFiniteMagnitude),
+        let bounds = string.boundingRect(with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
                                          options: [.usesLineFragmentOrigin],
                                          context: nil)
         

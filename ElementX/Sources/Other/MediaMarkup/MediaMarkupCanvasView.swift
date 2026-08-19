@@ -13,7 +13,7 @@ struct MediaMarkupCanvasView: UIViewRepresentable {
     let drawing: PKDrawing
     /// Changes whenever `drawing` is replaced by the model, telling the canvas to reload it.
     let revision: Int
-    let tool: PKInkingTool
+    let tool: PKTool
     let isDrawingEnabled: Bool
     let drawingDidChange: (PKDrawing) -> Void
     
