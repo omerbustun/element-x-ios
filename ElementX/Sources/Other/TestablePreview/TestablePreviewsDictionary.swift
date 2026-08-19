@@ -96,6 +96,7 @@ enum TestablePreviewsDictionary {
             "MapLibreStaticMapView_Previews" : MapLibreStaticMapView_Previews.self,
             "MatrixUserPermalink_Previews" : MatrixUserPermalink_Previews.self,
             "MediaEventsTimelineScreen_Previews" : MediaEventsTimelineScreen_Previews.self,
+            "MediaMarkupView_Previews" : MediaMarkupView_Previews.self,
             "MediaUploadPreviewScreen_Previews" : MediaUploadPreviewScreen_Previews.self,
             "MentionSuggestionItemView_Previews" : MentionSuggestionItemView_Previews.self,
             "MessageComposerTextField_Previews" : MessageComposerTextField_Previews.self,
