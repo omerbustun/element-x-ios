@@ -50,7 +50,7 @@ struct BugReportScreen: View {
         .fullScreenCover(isPresented: $context.isPresentingScreenshotMarkup) {
             if let screenshot = context.viewState.screenshot {
                 // Emojis are intentionally unavailable, the markup here is for annotating and redacting.
-                MediaMarkupView(image: screenshot, emojiProvider: nil) { markedUpScreenshot in
+                MediaMarkupView(image: screenshot, entryPoint: .draw, emojiProvider: nil) { markedUpScreenshot in
                     context.send(viewAction: .attachScreenshot(markedUpScreenshot))
                     context.isPresentingScreenshotMarkup = false
                 } markupWasCancelled: {

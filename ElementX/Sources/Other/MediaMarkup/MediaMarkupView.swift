@@ -11,6 +11,8 @@ import SwiftUI
 
 /// An editor that lets the user draw on an image and decorate it with emojis and text.
 struct MediaMarkupView: View {
+    /// What the editor was opened to do, chosen back on the media upload preview.
+    let entryPoint: MediaMarkupEntryPoint
     /// The provider used to pick emoji stickers. Emojis are unavailable when this is `nil`.
     let emojiProvider: EmojiProviderProtocol?
     let markupDidFinish: (UIImage) -> Void
@@ -23,13 +25,18 @@ struct MediaMarkupView: View {
     @FocusState private var isTextEntryFocussed: Bool
     
     init(image: UIImage,
+         entryPoint: MediaMarkupEntryPoint,
          emojiProvider: EmojiProviderProtocol?,
          markupDidFinish: @escaping (UIImage) -> Void,
          markupWasCancelled: @escaping () -> Void) {
+        self.entryPoint = entryPoint
         self.emojiProvider = emojiProvider
         self.markupDidFinish = markupDidFinish
         self.markupWasCancelled = markupWasCancelled
-        _model = State(initialValue: MediaMarkupModel(image: image))
+        
+        let model = MediaMarkupModel(image: image)
+        model.tool = entryPoint.tool
+        _model = State(initialValue: model)
     }
     
     var body: some View {
@@ -48,6 +55,7 @@ struct MediaMarkupView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear(perform: openEntryPoint)
         .sheet(item: $emojiPicker) { presentation in
             MediaMarkupEmojiPickerSheet(viewModel: presentation.viewModel) { emojiPicker = nil }
         }
@@ -142,30 +150,24 @@ struct MediaMarkupView: View {
             }
             
             HStack(spacing: 16) {
-                toolButton(icon: \.edit, label: UntranslatedL10n.commonDraw, isSelected: model.tool == .pen) {
-                    select(tool: .pen)
-                }
-                
-                toolButton(icon: \.editSolid, label: UntranslatedL10n.commonHighlight, isSelected: model.tool == .highlighter) {
-                    select(tool: .highlighter)
-                }
-                
-                toolButton(icon: \.delete, label: UntranslatedL10n.commonErase, isSelected: model.tool == .eraser) {
-                    select(tool: .eraser)
-                }
-                
-                toolButton(icon: \.arrowUpRight, label: UntranslatedL10n.commonShape, isSelected: model.tool == .shape) {
-                    select(tool: .shape)
-                }
-                
-                if emojiProvider != nil {
-                    toolButton(icon: \.reaction, label: UntranslatedL10n.commonAddEmoji) {
-                        presentEmojiPicker()
+                // Stickers are added from the media upload preview, so the only tools left to
+                // switch between here are the ones that draw.
+                if model.isDrawing {
+                    toolButton(icon: \.edit, label: UntranslatedL10n.commonDraw, isSelected: model.tool == .pen) {
+                        select(tool: .pen)
                     }
-                }
-                
-                toolButton(icon: \.textFormatting, label: UntranslatedL10n.commonAddText) {
-                    presentTextEntry()
+                    
+                    toolButton(icon: \.editSolid, label: UntranslatedL10n.commonHighlight, isSelected: model.tool == .highlighter) {
+                        select(tool: .highlighter)
+                    }
+                    
+                    toolButton(icon: \.arrowUpRight, label: UntranslatedL10n.commonShape, isSelected: model.tool == .shape) {
+                        select(tool: .shape)
+                    }
+                    
+                    toolButton(icon: \.delete, label: UntranslatedL10n.commonErase, isSelected: model.tool == .eraser) {
+                        select(tool: .eraser)
+                    }
                 }
                 
                 Spacer()
@@ -310,7 +312,15 @@ struct MediaMarkupView: View {
     /// Selecting a drawing tool a second time returns to moving stickers around.
     private func select(tool: MediaMarkupModel.Tool) {
         model.selectedStickerID = nil
-        model.tool = model.tool == tool ? .stickers : tool
+        model.tool = tool
+    }
+    
+    private func openEntryPoint() {
+        switch entryPoint {
+        case .emoji: presentEmojiPicker()
+        case .text: presentTextEntry()
+        case .draw: break
+        }
     }
     
     private func presentTextEntry() {
@@ -404,15 +414,15 @@ private struct MediaMarkupEmojiPickerSheet: View {
 
 // MARK: - Previews
 
-struct MediaMarkupView_Previews: PreviewProvider {
+struct MediaMarkupView_Previews: PreviewProvider, TestablePreview {
     static let image = Bundle.main.url(forResource: "preview_image", withExtension: "jpg")
         .flatMap { UIImage(contentsOfFile: $0.path(percentEncoded: false)) } ?? UIImage()
     
     static var previews: some View {
-        MediaMarkupView(image: image, emojiProvider: EmojiProvider(appSettings: .volatile())) { _ in } markupWasCancelled: { }
+        MediaMarkupView(image: image, entryPoint: .draw, emojiProvider: EmojiProvider(appSettings: .volatile())) { _ in } markupWasCancelled: { }
             .previewDisplayName("Markup")
         
-        MediaMarkupView(image: image, emojiProvider: nil) { _ in } markupWasCancelled: { }
+        MediaMarkupView(image: image, entryPoint: .draw, emojiProvider: nil) { _ in } markupWasCancelled: { }
             .previewDisplayName("Without emojis")
     }
 }

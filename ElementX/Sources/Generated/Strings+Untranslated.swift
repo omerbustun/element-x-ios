@@ -34,6 +34,8 @@ internal nonisolated enum UntranslatedL10n {
   internal static var commonAddEmoji: String { return UntranslatedL10n.tr("Untranslated", "common_add_emoji") }
   /// Add text
   internal static var commonAddText: String { return UntranslatedL10n.tr("Untranslated", "common_add_text") }
+  /// Crop
+  internal static var commonCrop: String { return UntranslatedL10n.tr("Untranslated", "common_crop") }
   /// Draw
   internal static var commonDraw: String { return UntranslatedL10n.tr("Untranslated", "common_draw") }
   /// Erase
@@ -54,8 +56,6 @@ internal nonisolated enum UntranslatedL10n {
   internal static var screenBugReportReplaceScreenshot: String { return UntranslatedL10n.tr("Untranslated", "screen_bug_report_replace_screenshot") }
   /// Search
   internal static var screenHomeTabSearch: String { return UntranslatedL10n.tr("Untranslated", "screen_home_tab_search") }
-  /// Markup
-  internal static var screenMediaUploadPreviewMarkup: String { return UntranslatedL10n.tr("Untranslated", "screen_media_upload_preview_markup") }
   /// Search for chats and messages
   internal static var screenSearchEmptyStateMessage: String { return UntranslatedL10n.tr("Untranslated", "screen_search_empty_state_message") }
   /// Start searching...

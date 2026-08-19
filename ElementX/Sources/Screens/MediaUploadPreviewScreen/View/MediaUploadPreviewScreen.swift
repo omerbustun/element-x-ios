@@ -63,13 +63,15 @@ struct MediaUploadPreviewScreen: View {
                 // Make sure out of bound error alerts are shown even if the sheet is presented
                 .alert(item: $context.alertInfo)
             }
-            .fullScreenCover(isPresented: $context.isPresentingMediaMarkup) {
+            .fullScreenCover(item: $context.markupEntryPoint) { entryPoint in
                 if let image = currentImage {
-                    MediaMarkupView(image: image, emojiProvider: context.viewState.emojiProvider) { markedUpImage in
+                    MediaMarkupView(image: image,
+                                    entryPoint: entryPoint,
+                                    emojiProvider: context.viewState.emojiProvider) { markedUpImage in
                         context.send(viewAction: .editedMedia(image: markedUpImage, index: currentIndex))
-                        context.isPresentingMediaMarkup = false
+                        context.markupEntryPoint = nil
                     } markupWasCancelled: {
-                        context.isPresentingMediaMarkup = false
+                        context.markupEntryPoint = nil
                     }
                 }
             }
@@ -181,18 +183,33 @@ struct MediaUploadPreviewScreen: View {
         }
         
         if isCurrentMediaImage {
+            // Everything that can be done to the image, so that the tool that is wanted is a
+            // single tap away. Cropping is its own screen, the rest open the markup editor.
             ToolbarItemGroup(placement: .primaryAction) {
-                Button { context.isPresentingMediaMarkup = true } label: {
-                    CompoundIcon(\.edit)
+                Button { context.isPresentingMediaEditor = true } label: {
+                    CompoundIcon(\.crop)
                 }
-                .accessibilityLabel(UntranslatedL10n.screenMediaUploadPreviewMarkup)
+                .accessibilityLabel(UntranslatedL10n.commonCrop)
                 // Fix a bug with the preferredColorScheme on iOS 18 where the button doesn't
                 // follow the dark colour scheme on devices running with dark mode disabled.
                 .tint(.compound.textActionPrimary)
                 
-                Button { context.isPresentingMediaEditor = true } label: {
-                    CompoundIcon(\.crop)
+                Button { context.markupEntryPoint = .emoji } label: {
+                    CompoundIcon(\.reaction)
                 }
+                .accessibilityLabel(UntranslatedL10n.commonAddEmoji)
+                .tint(.compound.textActionPrimary)
+                
+                Button { context.markupEntryPoint = .text } label: {
+                    CompoundIcon(\.textFormatting)
+                }
+                .accessibilityLabel(UntranslatedL10n.commonAddText)
+                .tint(.compound.textActionPrimary)
+                
+                Button { context.markupEntryPoint = .draw } label: {
+                    CompoundIcon(\.edit)
+                }
+                .accessibilityLabel(UntranslatedL10n.commonDraw)
                 .tint(.compound.textActionPrimary)
             }
         }

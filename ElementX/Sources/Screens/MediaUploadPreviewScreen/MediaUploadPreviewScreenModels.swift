@@ -32,7 +32,7 @@ struct MediaUploadPreviewScreenBindings: BindableState {
     
     var isPresentingMediaCaptionWarning = false
     var isPresentingMediaEditor = false
-    var isPresentingMediaMarkup = false
+    var markupEntryPoint: MediaMarkupEntryPoint?
     var alertInfo: AlertInfo<MediaUploadPreviewAlertType>?
 }
 
